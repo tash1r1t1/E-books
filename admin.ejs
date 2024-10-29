@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Навігаційна панель -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Admin Panel</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/auth/logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Форма для додавання нової книги -->
+        <h2>Додати нову книгу</h2>
+        <form id="bookForm" action="/admin/add" method="post">
+            <div class="form-group">
+                <label for="title">Назва</label>
+                <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="author">Автор</label>
+                <input type="text" class="form-control" id="author" name="author" required>
+            </div>
+            <div class="form-group">
+                <label for="year">Рік</label>
+                <input type="number" class="form-control" id="year" name="year" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Опис</label>
+                <textarea class="form-control" id="description" name="description"></textarea>
+            </div>
+            <!-- Приховане поле для URL обкладинки -->
+            <input type="hidden" id="coverUrl" name="coverUrl">>
+            <button type="submit" class="btn btn-primary">Додати книгу</button>
+        </form>
+
+        <!-- Список існуючих книг -->
+        <h2 class="mt-4">Існуючі книги</h2>
+        <ul id="bookList" class="list-group">
+            <% books.forEach(book => { %>
+                <li class="list-group-item">
+                    <h5><%= book.title %></h5>
+                    <p><strong>Автор:</strong> <%= book.author %></p>
+                    <p><strong>Рік:</strong> <%= book.year %></p>
+                    <p><strong>Опис:</strong> <%= book.description %></p>
+                    <img src="<%= book.coverUrl %>" alt="Обкладинка книги" style="max-width: 100px;">
+                    <a href="/admin/edit/<%= book.id %>" class="btn btn-warning btn-sm">Редагувати</a>
+                    <form action="/admin/delete/<%= book.id %>" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Видалити</button>
+                    </form>
+                </li>
+            <% }) %>
+        </ul>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        // Обробка форми додавання книги
+        $('#bookForm').on('submit', function(e) {
+            e.preventDefault();
+
+            // Отримуємо дані з форми
+            const title = $('#title').val();
+            const author = $('#author').val();
+            const year = $('#year').val();
+
+            // Формуємо запит для API OpenLibrary для отримання обкладинки книги
+            const query = `title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=1`;
+            const apiUrl = `https://openlibrary.org/search.json?${query}`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.docs.length > 0) {
+                        const book = data.docs[0];
+
+                        // Отримуємо обкладинку або встановлюємо обкладинку за замовчуванням
+                        const coverId = book.cover_i;
+                        let coverUrl = '';
+                        if (coverId) {
+                            coverUrl = `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`;
+                        } else {
+                            coverUrl = 'https://via.placeholder.com/200x300?text=No+Cover';
+                        }
+
+                        $('#coverUrl').val(coverUrl);  // Встановлюємо URL обкладинки в прихованому полі
+
+                        // Надсилаємо дані форми на сервер через AJAX
+                        $.post('/admin/add', {
+                            title: title,
+                            author: author,
+                            year: year,
+                            description: $('#description').val(),
+                            coverUrl: coverUrl
+                        })
+                        .done(function(response) {
+                            console.log('Успішно:', response);
+                            location.reload();  // Перезавантажуємо сторінку
+                        })
+                        .fail(function(jqXHR, textStatus, errorThrown) {
+                            console.error('Помилка:', textStatus, errorThrown);
+                        });
+                    } else {
+                        alert('Не знайдено відповідної книги.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Помилка отримання даних:', error);
+                });
+        });
+    </script>
+</body>
+</html>

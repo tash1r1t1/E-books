@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Book</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Edit Book</h2>
+        <form id="editBookForm" action="/admin/edit/<%= book.id %>" method="POST">
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" class="form-control" value="<%= book.title %>" required>
+            </div>
+            <div class="form-group">
+                <label for="author">Author</label>
+                <input type="text" id="author" name="author" class="form-control" value="<%= book.author %>" required>
+            </div>
+            <div class="form-group">
+                <label for="year">Year</label>
+                <input type="number" id="year" name="year" class="form-control" value="<%= book.year %>" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" required><%= book.description %></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="/admin" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $('#editBookForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const formData = $(this).serialize();
+            
+            $.post($(this).attr('action'), formData)
+                .done(function(response) {
+                    window.location.href = '/admin'; // Перенаправляем на страницу со списком книг
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('Error:', textStatus, errorThrown);
+                });
+        });
+    </script>
+</body>
+</html>
